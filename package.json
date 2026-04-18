@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
   "dev": "npx serve . -p 3000",
-  "build": "echo 'static build'",
+  "build": "echo 'static build",
   "start": "echo 'static'"
 },
   "keywords": [
