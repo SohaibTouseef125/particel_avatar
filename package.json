@@ -1,0 +1,38 @@
+{
+  "name": "jamesgpt-particle-face-avatar",
+  "version": "1.0.0",
+  "description": "Production-ready 3D particle face avatar with viseme lip-sync, eye controls, and emotional expressions",
+  "main": "src/particle-face-avatar.js",
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve . -p 3000",
+    "build": "echo 'No build step required - ES modules ready'",
+    "lint": "echo 'Add eslint config if needed'"
+  },
+  "keywords": [
+    "threejs",
+    "avatar",
+    "particle-system",
+    "lip-sync",
+    "viseme",
+    "webgl",
+    "3d",
+    "face-animation",
+    "azure-tts"
+  ],
+  "author": "JamesGPT Team",
+  "license": "Proprietary",
+  "peerDependencies": {
+    "three": ">=0.150.0"
+  },
+  "devDependencies": {
+    "serve": "^14.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jamesgpt/particle-face-avatar"
+  }
+}

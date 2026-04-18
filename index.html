@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>JamesGPT - Master Diagnostic Console</title>
+  <style>
+    body { margin: 0; background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+    #avatar-canvas { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
+    
+    .panel {
+        position: fixed; top: 15px; right: 15px; width: 320px;
+        background: rgba(10, 10, 10, 0.96); padding: 20px; border-radius: 15px;
+        border: 1px solid #00d2ff; z-index: 100000;
+        max-height: 92vh; overflow-y: auto;
+        box-shadow: 0 0 40px rgba(0, 210, 255, 0.2);
+    }
+
+    h3 { margin: 15px 0 8px; color: #00d2ff; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+    h3:first-child { margin-top: 0; }
+
+    .group { margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 4px; }
+    .label { font-size: 10px; color: #888; width: 100%; margin-bottom: 2px; }
+
+    button {
+        background: #222; border: 1px solid #444; color: #eee;
+        padding: 6px 12px; border-radius: 5px; cursor: pointer;
+        font-size: 10px; flex-grow: 1; transition: all 0.2s;
+    }
+    button:hover { background: #333; border-color: #00d2ff; color: #fff; }
+    button.active { background: #00d2ff; color: #000; }
+    
+    input[type="range"] { width: 100%; margin: 5px 0; accent-color: #00d2ff; }
+    select { width: 100%; background: #111; border: 1px solid #333; color: #fff; padding: 6px; border-radius: 5px; font-size: 11px; }
+
+    .flex { display: flex; gap: 8px; align-items: center; width: 100%; }
+    .stat-row { display: flex; justify-content: space-between; font-family: monospace; font-size: 9px; color: #00ff88; margin-top: 10px; border-top: 1px solid #222; padding-top: 8px; }
+  </style>
+
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+  </script>
+</head>
+<body>
+  <div class="panel">
+    <h3>1. Facial Expressions</h3>
+    <div class="group">
+        <button onclick="setExpr('neutral')">Neutral</button>
+        <button onclick="setExpr('joy')">Joy</button>
+        <button onclick="setExpr('anger')">Anger</button>
+        <button onclick="setExpr('surprise')">Surprise</button>
+        <button onclick="setExpr('sadness')">Sadness</button>
+        <button onclick="setExpr('thinking')">Thinking</button>
+        <button onclick="setExpr('listening')">Listening</button>
+    </div>
+
+    <h3>2. Eye & Gaze Control</h3>
+    <div class="group">
+        <button onclick="doBlink()" style="width:100%; border-color:#00ff88">Manual Blink (170ms Test)</button>
+        <div class="label">Gaze Target (Horizontal / Vertical)</div>
+        <input type="range" id="gaze-x" min="-1" max="1" step="0.01" value="0">
+        <input type="range" id="gaze-y" min="-1" max="1" step="0.01" value="0">
+    </div>
+
+    <h3>3. Mouth & Lip-Sync</h3>
+    <div class="group">
+        <div class="label">Viseme Shape Tester (Azure 23)</div>
+        <div class="flex">
+            <select id="viseme-select">
+                <option value="SIL">SIL (Silence)</option>
+                <option value="AH">AH (Open)</option>
+                <option value="EE">EE (Mid)</option>
+                <option value="OO">OO (Round)</option>
+                <option value="UW">UW (Pucker)</option>
+                <option value="SS">SS (Teeth)</option>
+                <option value="FF">FF (Tuck)</option>
+                <option value="MM">MM (Pressed)</option>
+            </select>
+            <button onclick="playViseme()">PLAY</button>
+        </div>
+        <div class="label">Manual Mouth Level (FFT Fallback)</div>
+        <input type="range" id="mouth-slider" min="0" max="1" step="0.01" value="0">
+    </div>
+
+    <h3>4. Particle Cohesion</h3>
+    <div class="group">
+        <div class="label">Adjust Tightness</div>
+        <input type="range" id="cohesion" min="0.8" max="1.2" step="0.001" value="1.0">
+    </div>
+
+    <div class="group">
+        <button onclick="location.reload()" style="background:#400; border-color:#f44">RESET FULL AVATAR</button>
+    </div>
+
+    <div class="stat-row">
+        <span id="fps-info">FPS: --</span>
+        <span id="mem-info">GPU: < 8MB</span>
+    </div>
+  </div>
+
+  <canvas id="avatar-canvas"></canvas>
+
+  <script type="module">
+    import JamesGPT from './lib/particle-face-module.js';
+
+    window.setExpr = (e) => JamesGPT.setExpression(e);
+    window.doBlink = () => JamesGPT.onClick(0,0);
+    window.playViseme = () => {
+        const id = document.getElementById('viseme-select').value;
+        JamesGPT.visemeAdapter.pushViseme({ id, t: 0, weight: 1.0, hold: 350 });
+        JamesGPT.visemeAdapter.utteranceStart = performance.now();
+    };
+
+    async function init() {
+        const canvas = document.getElementById('avatar-canvas');
+        await JamesGPT.init(canvas);
+
+        const mouthSlider = document.getElementById('mouth-slider');
+        const cohesion = document.getElementById('cohesion');
+        const gazeX = document.getElementById('gaze-x');
+        const gazeY = document.getElementById('gaze-y');
+        const fpsInfo = document.getElementById('fps-info');
+
+        let lastTime = performance.now();
+        let frames = 0;
+        let lastFPS = lastTime;
+
+        function loop(now) {
+            const dt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            // Update parameters from panel
+            if (JamesGPT.mat) JamesGPT.mat.uniforms.uCohesion.value = parseFloat(cohesion.value);
+            JamesGPT.eyeController.setGazeTarget(parseFloat(gazeX.value), parseFloat(gazeY.value));
+
+            // System Update
+            JamesGPT.update(dt, { mouthLevel: parseFloat(mouthSlider.value) });
+
+            frames++;
+            if (now > lastFPS + 1000) {
+                fpsInfo.innerText = `FPS: ${frames}`;
+                frames = 0; lastFPS = now;
+            }
+            requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+    }
+    window.addEventListener('resize', () => JamesGPT.resize(window.innerWidth, window.innerHeight));
+    init();
+  </script>
+</body>
+</html>
