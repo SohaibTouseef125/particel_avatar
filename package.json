@@ -5,10 +5,10 @@
   "main": "src/particle-face-avatar.js",
   "type": "module",
   "scripts": {
-    "dev": "npx serve . -p 3000",
-    "build": "echo 'No build step required - ES modules ready'",
-    "lint": "echo 'Add eslint config if needed'"
-  },
+  "dev": "npx serve . -p 3000",
+  "build": "echo 'static build'",
+  "start": "echo 'static'"
+},
   "keywords": [
     "threejs",
     "avatar",
